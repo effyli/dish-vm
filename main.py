@@ -30,14 +30,18 @@ def main():
     # work on mmd for now
     shift_tester = ShiftTester(dim=test_dim, mt=mt)
     p_vals = []
+    res_to_save = {}
     # load embeddings to test
     for p_names in itertools.combinations_with_replacement(names, 2):
         print(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
 
-        p_val = shift_tester.test_shift(emb_a, emb_b)
+        p_val = shift_tester.test_shift(emb_a[:5], emb_b[:5])
         print('P value: ', p_val)
         p_vals.append(p_val)
+        res_to_save[p_names] = p_val
+    with open('pvals_res', 'w') as f:
+        json.dump(res_to_save, f)
 
 
 if __name__ == '__main__':
