@@ -36,10 +36,11 @@ def main():
         print(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
 
-        p_val = shift_tester.test_shift(emb_a[:5], emb_b[:5])
+        p_val = shift_tester.test_shift(emb_a, emb_b)
         print('P value: ', p_val)
         p_vals.append(p_val)
-        res_to_save[p_names] = p_val
+        p_val_to_save = [p_val[0], p_val[1].tolist()]
+        res_to_save[' and '.join(p_names)] = p_val_to_save
     with open('pvals_res', 'w') as f:
         json.dump(res_to_save, f)
 
