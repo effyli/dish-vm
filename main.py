@@ -1,6 +1,8 @@
 import argparse
 import numpy as np
 
+import logging
+
 from shift_tester import *
 import itertools
 import json
@@ -16,6 +18,16 @@ def load_embeddings_from_file(p_names, emb_data_dir):
 
 
 def main():
+    logging.basicConfig(filename='mmd-pvals',
+                        filemode='a',
+                        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                        datefmt='%H:%M:%S',
+                        level=logging.DEBUG)
+
+    logging.info("Running MMD testing for all datasets")
+
+    logger = logging.getLogger('mmd-pvals')
+
     data_folder = 'dataset/'
     datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
                 "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
@@ -36,10 +48,11 @@ def main():
         print(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
 
-        p_val = shift_tester.test_shift(emb_a, emb_b)
+        p_val = shift_tester.test_shift(emb_a[:2], emb_b[:2])
         print('P value: ', p_val)
         p_vals.append(p_val)
         p_val_to_save = [p_val[0], p_val[1].tolist()]
+        logging.info('p value: ' + str(p_val[0]))
         res_to_save[' and '.join(p_names)] = p_val_to_save
     with open('pvals_res', 'w') as f:
         json.dump(res_to_save, f)
