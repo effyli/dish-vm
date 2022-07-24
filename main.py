@@ -48,10 +48,12 @@ def main():
         print(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
 
-        p_val = shift_tester.test_shift(emb_a[:2], emb_b[:2])
+        p_val = shift_tester.test_shift(emb_a[:2], emb_b[:3])
+        print('MMD distance: ', p_val[0])
         print('P value: ', p_val)
         p_vals.append(p_val)
-        p_val_to_save = [p_val[0], p_val[1].tolist()]
+        p_val_to_save = [p_val[0], p_val[1]]
+        logging.info('mmd: ' + str(p_val))
         logging.info('p value: ' + str(p_val[0]))
         res_to_save[' and '.join(p_names)] = p_val_to_save
     with open('pvals_res', 'w') as f:

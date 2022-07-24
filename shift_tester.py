@@ -139,4 +139,4 @@ class ShiftTester:
                                      norm=2, ret_matrix=True)
             p_val = knn_test.pval(matrix)
             
-        return p_val, np.array([])
+        return t_val, p_val, np.array([])
