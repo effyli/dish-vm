@@ -61,6 +61,7 @@ def tokens_annotations_alignment(sample, label, tokenzier):
     annotation = ['O']
     sample_lst = sample.split(' ')
     offset_mappings = tokenzier(sample_lst, return_offsets_mapping=True).data['offset_mapping']
+    # skip bad samples
     if len(offset_mappings) != len(labels):
         return None
     for i, tokens in enumerate(offset_mappings):
@@ -99,17 +100,17 @@ if __name__ == '__main__':
     data_folder = args.input_folder
     output_folder = args.output_folder
 
-    # datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
-    #             "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
-    #             "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
-    # # names following the same order
-    # names = ["conll", "cerec", "ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
-
-    datasets = ["BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
+    datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
+                "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
-    names = ["BTC", "WNUT17", "wikigold", "re3d", "SEC",
-             "sciERC"]
+    names = ["conll", "cerec", "ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
+
+    # datasets = ["BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
+    #             "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
+    # # names following the same order
+    # names = ["BTC", "WNUT17", "wikigold", "re3d", "SEC",
+    #          "sciERC"]
     print("Number of datasets: ", len(datasets))
     results = {}
     for dataset, name in zip(datasets, names):
@@ -118,7 +119,7 @@ if __name__ == '__main__':
             output = json.load(f)
         data = get_sents(output['data'])
         # get labels
-        with open(data_folder + '{}_labels_dish.json'.format(name), 'r') as f:
+        with open(data_folder + '{}_labels_mapped_dish.json'.format(name), 'r') as f:
             labels = json.load(f)
         # loading model
         tokenizer = AutoTokenizer.from_pretrained("dslim/bert-base-NER")
