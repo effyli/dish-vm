@@ -82,7 +82,7 @@ def run_tests(names, vocabs, v_method):
         ksres = ks_2samp(data1, data2, mode="asymp")
         # perform Kolmogorov-Smirnov test
         print(ksres)
-        logging.info(' '.join(ksres))
+        logging.info(' '.join(str(res) for res in list(ksres)))
         if ksres.pvalue < bf_p:
             print("From different distribution")
             logging.info("From different distribution")
