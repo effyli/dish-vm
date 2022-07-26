@@ -68,9 +68,11 @@ def run_tests(names, vocabs, v_method):
         print(p_names)
         logging.info('{}, {}'.format(p_names[0], p_names[1]))
         p_vocabs = [vocabs[names.index(n)] for n in p_names]
-        intersect_vocab = get_intersect_or_joined_vocabs(p_vocabs, method=v_method)
-
-        counts = data_counts_by_names(list(p_names), p_vocabs, i_dict=intersect_vocab)
+        proc_vocab = get_intersect_or_joined_vocabs(p_vocabs, method=v_method)
+        if v_method == 'intersect':
+            counts = data_counts_by_names(list(p_names), p_vocabs, i_dict=proc_vocab)
+        elif v_method == 'joined':
+            counts = data_counts_by_names(list(p_names), p_vocabs, j_dict=proc_vocab)
         sums = [sum(c) for c in counts]
         p_counts = []
 
