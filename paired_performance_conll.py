@@ -134,6 +134,12 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
     # we fine-tune the model on train data and evaluate on test set
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+    model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id),
+                                                            ignore_mismatched_sizes=True)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model.to(device)
+    id2tag = model.config.id2label
+
     train_encodings = tokenizer(train_data, is_split_into_words=True, return_offsets_mapping=True, padding=True,
                                 truncation=True)
     test_encodings = tokenizer(test_data, is_split_into_words=True, return_offsets_mapping=True, padding=True,
@@ -150,23 +156,13 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
     logging.info('test size: ' + str(len(test_dataset)))
 
     if evaluate_only:
-        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id), ignore_mismatched_sizes=True)
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-        model.to(device)
         model.eval()
         weighted_f1, result_str, weighted_f1s_categories = evaluate(test_dataset, device, model, id2tag, weighted_f1s_categories)
         print(result_str)
         return weighted_f1, result_str, weighted_f1s_categories
 
     else:
-
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-        # Load model
-        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id), ignore_mismatched_sizes=True)
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-        model.to(device)
         model.train()
 
         optim = AdamW(model.parameters(), lr=5e-5)
@@ -213,7 +209,6 @@ if __name__ == '__main__':
     seed = 2022
     torch.manual_seed(seed)
     np.random.seed(0)
-
 
     logging.info("Testing Bert for conll dataset")
 
