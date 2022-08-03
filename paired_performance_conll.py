@@ -175,6 +175,7 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
         #     res.append(outputs)
         weighted_f1, result_str, weighted_f1s_categories = evaluate(test_dataset, device, model, id2tag, weighted_f1s_categories)
         print(result_str)
+        logging.info(result_str)
         return weighted_f1, result_str, weighted_f1s_categories
 
     else:
@@ -210,7 +211,7 @@ if __name__ == '__main__':
     DEBUG = False
     # This script is used for measure the performance and
     # calculate the performance difference for any pair of datasets
-    logging.basicConfig(filename='performance_on_conll',
+    logging.basicConfig(filename='performance_on_all_no_ft',
                         filemode='a',
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',
@@ -225,19 +226,23 @@ if __name__ == '__main__':
     seed = 2022
     set_seed(seed)
 
-    logging.info("Testing Bert for conll dataset")
+    logging.info("Testing Bert for all dataset without fine-tuning")
 
     # Set useful parameters
     data_folder = args.input_folder
     output_folder = args.output_folder
 
-    datasets = ["conll_dish.json"]
+    datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
+                "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
+                "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
-    names = ["conll"]
+    names = ["conll", "cerec", "ontonotes", "i2b2", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "sec", "sciERC"]
     print("Number of datasets: ", len(datasets))
 
     results = {}
     for t_name in names:
+        print('testing on dataset: {}'.format(t_name))
+        logging.info('testing on dataset: {}'.format(t_name))
         s_train_data, s_train_labels, t_test_data, t_test_labels = load_data(data_folder, t_name)
         tag2id, id2tag = get_tag2id(s_train_labels + t_test_labels)
         weighted_f1_categories = {'ORG': [], 'PER': [], 'DIG': [], 'LOC': []}
