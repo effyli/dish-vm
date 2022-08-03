@@ -148,8 +148,12 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
                                                             ignore_mismatched_sizes=True)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
-    id2tag = model.config.id2label
-    tag2id = {tag: id for id, tag in id2tag.items()}
+    tag2id_model = model.config.label2id
+    for tag, id in tag2id.items():
+        if tag not in tag2id_model.keys():
+            tag2id_model[tag] = len(tag2id_model)
+    tag2id = tag2id_model
+    id2tag = {id: tag for tag, id in tag2id.items()}
 
     train_encodings = tokenizer(train_data, is_split_into_words=True, return_offsets_mapping=True, padding=True,
                                 truncation=True)
@@ -237,6 +241,10 @@ if __name__ == '__main__':
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
     names = ["conll", "cerec", "ontonotes", "i2b2", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "sec", "sciERC"]
+
+    # datasets = ["cerec_dish.json"]
+    # # names following the same order
+    # names = ["cerec"]
     print("Number of datasets: ", len(datasets))
 
     results = {}
@@ -247,8 +255,9 @@ if __name__ == '__main__':
         tag2id, id2tag = get_tag2id(s_train_labels + t_test_labels)
         weighted_f1_categories = {'ORG': [], 'PER': [], 'DIG': [], 'LOC': []}
         if DEBUG:
-            s_train_data, s_train_labels, t_test_data, t_test_labels = s_train_data[:10], \
-                                                                       s_train_labels[:10], t_test_data[:10], t_test_labels[:10]
+            sample_size = 10
+            s_train_data, s_train_labels, t_test_data, t_test_labels = s_train_data[10:20], \
+                                                                       s_train_labels[10:20], t_test_data[10:20], t_test_labels[10:20]
         epoch = 1 if DEBUG else 10
         weighted_f1, result_str, weighted_f1s_categories = trainer(s_train_data, s_train_labels, t_test_data,
                                                                    t_test_labels, weighted_f1_categories,
