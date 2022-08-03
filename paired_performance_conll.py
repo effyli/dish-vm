@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import random
 import logging
 import argparse
 import itertools
@@ -13,6 +14,12 @@ from transformers import AdamW, AutoTokenizer, AutoModelForTokenClassification
 
 from seqeval.metrics import classification_report
 from dataset import CustomizedDataset
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def get_f1(result_str, category=None):
@@ -59,7 +66,8 @@ def evaluate(val_dataset, device, model, id2tag, categories=None):
     print('evaluating...')
     all_labels = []
     all_preds = []
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
+
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
     for batch in val_loader:
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
@@ -69,12 +77,14 @@ def evaluate(val_dataset, device, model, id2tag, categories=None):
         logits = outputs.logits
         pred = torch.argmax(logits, dim=-1)
         all_preds.append(pred.squeeze(0).tolist())
-
-    model.train()
+    # model.train()
     labels_truncated = []
     preds_truncated = []
     # dealing with the ignored preds
     for labels, preds in zip(all_labels, all_preds):
+        if len(labels) != len(preds):
+            print('bad example')
+            continue
         arr_labels = np.array(labels)
         preds_truncated.append(np.array(preds)[arr_labels != -100].tolist())
         labels_truncated.append(arr_labels[arr_labels != -100].tolist())
@@ -139,6 +149,7 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
     id2tag = model.config.id2label
+    tag2id = {tag: id for id, tag in id2tag.items()}
 
     train_encodings = tokenizer(train_data, is_split_into_words=True, return_offsets_mapping=True, padding=True,
                                 truncation=True)
@@ -157,6 +168,11 @@ def trainer(train_data, train_labels, test_data, test_labels, weighted_f1s_categ
 
     if evaluate_only:
         model.eval()
+        # # for debugging:
+        # res = []
+        # while True:
+        #     outputs = evaluate(test_dataset, device, model, id2tag, weighted_f1s_categories)
+        #     res.append(outputs)
         weighted_f1, result_str, weighted_f1s_categories = evaluate(test_dataset, device, model, id2tag, weighted_f1s_categories)
         print(result_str)
         return weighted_f1, result_str, weighted_f1s_categories
@@ -207,8 +223,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     seed = 2022
-    torch.manual_seed(seed)
-    np.random.seed(0)
+    set_seed(seed)
 
     logging.info("Testing Bert for conll dataset")
 
