@@ -14,6 +14,19 @@ from transformers import AdamW, AutoTokenizer, AutoModelForTokenClassification
 from seqeval.metrics import classification_report
 from dataset import CustomizedDataset
 
+# obtained this from the model card: https://huggingface.co/dslim/bert-base-NER/blob/main/config.json
+default_id2label = {
+    0: "O",
+    1: "B-MISC",
+    2: "I-MISC",
+    3: "B-PER",
+    4: "I-PER",
+    5: "B-ORG",
+    6: "I-ORG",
+    7: "B-LOC",
+    8: "I-LOC"
+  }
+default_label2id = {id: key for key, id in default_id2label.items()}
 
 def get_f1(result_str, category=None):
     if category:
@@ -166,21 +179,26 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
     batch_size = batch_size
     num_epoch = num_epoch
     tag2id, id2tag = tag_id_maps
+
+    new_label2id = default_label2id
+    for tag, id in tag2id.items():
+        if tag not in new_label2id.keys():
+            new_label2id[tag] = len(new_label2id)
+    tag2id = new_label2id
+    id2tag = {id: tag for tag, id in tag2id.items()}
+
     # we fine-tune the model on train data and evaluate on test set
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     if mode == 'train':
-        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id),
-                                                                ignore_mismatched_sizes=True)
+        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id), ignore_mismatched_sizes=True)
     else:
         model = model
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
-    tag2id_model = model.config.label2id
-    for tag, id in tag2id.items():
-        if tag not in tag2id_model.keys():
-            tag2id_model[tag] = len(tag2id_model)
-    tag2id = tag2id_model
-    id2tag = {id: tag for tag, id in tag2id.items()}
+
+    model.config.label2id = tag2id
+    model.config.id2label = id2tag
+    model.num_labels = len(tag2id)
 
     if mode == 'evaluate':
         if test_data == None or test_labels == None:
@@ -206,7 +224,7 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
 
 
 if __name__ == '__main__':
-    DEBUG = False
+    DEBUG = True
     # This script is used for measure the performance and
     # calculate the performance difference for any pair of datasets
     logging.basicConfig(filename='paired_performance_report',
@@ -237,6 +255,11 @@ if __name__ == '__main__':
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
     names = ["conll", "cerec", "ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
+
+    # datasets = ["conll_dish.json"]
+    # # names following the same order
+    # names = ["AnEM"]
+
     print("Number of datasets: ", len(datasets))
 
     results = {}
