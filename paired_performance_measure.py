@@ -48,7 +48,12 @@ def encode_tags(tags, encodings, tag2id):
         arr_offset = np.array(doc_offset)
 
         # set labels whose first offset position is 0 and the second is not 0
-        doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)] = doc_labels
+        # we should be careful when we truncate the sequence while encoding
+        if len(doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)]) < len(doc_labels):
+            truncated_size = len(doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)])
+            doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)] = doc_labels[:truncated_size]
+        else:
+            doc_enc_labels[(arr_offset[:, 0] == 0) & (arr_offset[:, 1] != 0)] = doc_labels
         encoded_labels.append(doc_enc_labels.tolist())
 
     return encoded_labels
@@ -224,7 +229,8 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
 
 
 if __name__ == '__main__':
-    DEBUG = True
+    DEBUG = False
+
     # This script is used for measure the performance and
     # calculate the performance difference for any pair of datasets
     logging.basicConfig(filename='paired_performance_report',
