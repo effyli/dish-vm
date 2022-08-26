@@ -128,6 +128,8 @@ if __name__ == '__main__':
 
     for name, data in zip(names, data_list):
         vocab = Dictionary(data)
+        # filtering out the words that occur less than 5 times for chi square
+        vocab.filter_extremes(no_below=5)
         vocabs.append(Dictionary(data))
 
     run_tests(names, vocabs, v_method='intersect')
