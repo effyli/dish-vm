@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     logging.info("Running chisquare testing for all datasets")
 
-    data_folder = "dataset/dish/"
+    data_folder = "dataset/new_dish/"
 
     # we compare different writing styles
     # such as news and conversations

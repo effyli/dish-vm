@@ -5,7 +5,7 @@ from embedding_generator import sent_embedding_generator
 
 
 if __name__ == '__main__':
-    data_folder = "dataset/dish/"
+    data_folder = "dataset/new_dish/"
 
     # we compare different writing styles
     # such as news and conversations
@@ -23,7 +23,7 @@ if __name__ == '__main__':
             data_list.append(output['data'])
             # mentions_list.append(output['mentions'])
 
-    path = 'embedding_files/'
+    path = 'sent_embedding_files/new_dish'
     for data, name in zip(data_list, names):
         embedding_list = []
         for sent in data:

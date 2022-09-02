@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
     # This script is used for measure the performance and
     # calculate the performance difference for any pair of datasets
-    logging.basicConfig(filename='paired_performance_report',
+    logging.basicConfig(filename='paired_performance_report_epoch3',
                         filemode='a',
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',

@@ -34,7 +34,7 @@ def main():
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     names = ["conll", "cerec", "ontonotes", "i2b2", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "sec", "sciERC"]
     print("Number of datasets: ", len(datasets))
-    emb_data_dir = 'sent_embedding_files/'
+    emb_data_dir = 'sent_embedding_files/new_dish/'
     test_type = 'Multiv'
     test_dim = TestDimensionality.Multi
     mt = MultidimensionalTest.MMD
@@ -47,8 +47,7 @@ def main():
     for p_names in itertools.combinations_with_replacement(names, 2):
         print(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
-
-        p_val = shift_tester.test_shift(emb_a[:2], emb_b[:3])
+        p_val = shift_tester.test_shift(emb_a[:50], emb_b[:50])
         print('MMD distance: ', p_val[0])
         print('P value: ', p_val)
         p_vals.append(p_val)
