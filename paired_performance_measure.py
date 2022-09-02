@@ -180,7 +180,7 @@ def train(train_dataset, batch_size, model, num_epoch, device):
 
 
 def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, test_labels=None, num_epoch=10,
-            batch_size=32, weighted_f1s_categories=None, model_name="dslim/bert-base-NER", mode='train', model=None):
+            batch_size=32, weighted_f1s_categories=None, model_name="dslim/bert-base-NER", mode='train', model=None, skip_train=False):
     batch_size = batch_size
     num_epoch = num_epoch
     tag2id, id2tag = tag_id_maps
@@ -220,6 +220,8 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
         return weighted_f1, result_str, weighted_f1s_categories
 
     elif mode == 'train':
+        if skip_train:
+            return model
         model.train()
         train_dataset = dataset_loader(train_data, tokenizer, train_labels, tag2id)
         print("train size:", len(train_dataset))
@@ -229,7 +231,6 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
 
 
 if __name__ == '__main__':
-    DEBUG = False
 
     # This script is used for measure the performance and
     # calculate the performance difference for any pair of datasets
@@ -243,7 +244,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input_folder', help='Path to input folder')
     parser.add_argument('-o', '--output_folder', help='Path to output folder for storing evaluation reports')
+    parser.add_argument('-e', '--num_epoch', help='Number of epochs used to fine-tune the model')
+    parser.add_argument('-s', '--skip_training',  help='Command to skip training and evaluating only',
+                        default=False, action='store_true')
+    parser.add_argument('-d', '--debugging', help='Command to indicate debugging mode',
+                        default=False, action='store_true')
     args = parser.parse_args()
+
+    DEBUG = args.debugging
 
     seed = 2022
     torch.manual_seed(seed)
@@ -269,7 +277,7 @@ if __name__ == '__main__':
     print("Number of datasets: ", len(datasets))
 
     results = {}
-    epoch = 10
+    epoch = args.num_epoch
     # all_reports = []
     # we do a two-sided paring experiments, so for some distance, we have two data points for the performance difference
     for s_name in names:
@@ -282,14 +290,14 @@ if __name__ == '__main__':
         if DEBUG:
             s_train_data, s_train_labels = s_train_data[10:20], s_train_labels[10:20]
             epoch = 1
-        model = trainer((tag2id, id2tag), train_data=s_train_data, train_labels=s_train_labels, num_epoch=epoch, mode='train')
+        model = trainer((tag2id, id2tag), train_data=s_train_data, train_labels=s_train_labels, num_epoch=epoch, mode='train', skip_train=args.skip_training)
         for t_name in names:
             # getting the target dataset that we wants to evaluate on
             # we keep the source dataset fixed this way, fine-tune on the source dataset and evaluate on the rest of the datasets
             print("Processing dataset {} and {}".format(s_name, t_name))
             logging.info('Paired datasets names: {} and {}'.format(s_name, t_name))
             print('loading data')
-            weighted_f1_categories = {'ORG': [], 'PER': [], 'DIG': [], 'LOC': []}
+            weighted_f1_categories = {'ORG': [], 'PER': [], 'MISC': [], 'LOC': []}
             # we then evaluate the fine-tuned model on the test set of the target dataset
             _, _, t_test_data, t_test_labels = load_data(data_folder, t_name)
             tag2id, id2tag = get_tag2id(t_test_labels)
