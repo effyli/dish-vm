@@ -244,8 +244,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input_folder', help='Path to input folder')
     parser.add_argument('-o', '--output_folder', help='Path to output folder for storing evaluation reports')
-    parser.add_argument('-e', '--num_epoch', help='Number of epochs used to fine-tune the model')
-    parser.add_argument('-s', '--skip_training',  help='Command to skip training and evaluating only',
+    parser.add_argument('-e', '--num_epoch', type=int, help='Number of epochs used to fine-tune the model')
+    parser.add_argument('-s', '--skip_training',  type=bool, help='Command to skip training and evaluating only',
                         default=False, action='store_true')
     parser.add_argument('-d', '--debugging', help='Command to indicate debugging mode',
                         default=False, action='store_true')
