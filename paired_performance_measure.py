@@ -7,6 +7,7 @@ import itertools
 import numpy as np
 from collections import defaultdict
 from torch.utils.data import DataLoader
+from torch import nn
 
 from transformers import pipeline
 from transformers import AdamW, AutoTokenizer, AutoModelForTokenClassification
@@ -88,7 +89,7 @@ def evaluate(val_dataset, device, model, id2tag, categories=None):
         pred = torch.argmax(logits, dim=-1)
         all_preds.append(pred.squeeze(0).tolist())
 
-    model.train()
+    # model.train()
     labels_truncated = []
     preds_truncated = []
     # dealing with the ignored preds
@@ -195,12 +196,22 @@ def trainer(tag_id_maps, train_data=None, train_labels=None, test_data=None, tes
     # we fine-tune the model on train data and evaluate on test set
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     if mode == 'train':
-        model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id), ignore_mismatched_sizes=True)
+        # line below is initializing the model with random weights. we want the model to keep the previous learnt "knowledge"
+        # model = AutoModelForTokenClassification.from_pretrained(model_name, num_labels=len(tag2id), ignore_mismatched_sizes=True)
+        # instead, we manually initialize the model weights and only random initialize the newly added heads with random weights
+        model = AutoModelForTokenClassification.from_pretrained(model_name)
+        # get number of heads we should add
+        num_heads = len(tag2id) - len(default_id2label)
+        # using hard-coded dimension for now
+        model.classifier.weight = nn.Parameter(torch.cat((model.classifier.weight, torch.randn(num_heads, 768)), 0))
+        # same with the biases
+        model.classifier.bias = nn.Parameter(torch.cat((model.classifier.bias, torch.randn(num_heads)), 0))
     else:
         model = model
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
 
+    # Trick to not let model crash for evaluation
     model.config.label2id = tag2id
     model.config.id2label = id2tag
     model.num_labels = len(tag2id)
@@ -245,7 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input_folder', help='Path to input folder')
     parser.add_argument('-o', '--output_folder', help='Path to output folder for storing evaluation reports')
     parser.add_argument('-e', '--num_epoch', type=int, help='Number of epochs used to fine-tune the model')
-    parser.add_argument('-s', '--skip_training',  type=bool, help='Command to skip training and evaluating only',
+    parser.add_argument('-s', '--skip_training', help='Command to skip training and evaluating only',
                         default=False, action='store_true')
     parser.add_argument('-d', '--debugging', help='Command to indicate debugging mode',
                         default=False, action='store_true')
@@ -264,11 +275,11 @@ if __name__ == '__main__':
     data_folder = args.input_folder
     output_folder = args.output_folder
 
-    datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
+    datasets = ["ontonotes_dish.json", "i2b2-06_dish.json",
                 "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
-    names = ["conll", "cerec", "ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
+    names = ["ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
 
     # datasets = ["conll_dish.json"]
     # # names following the same order
