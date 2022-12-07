@@ -12,6 +12,7 @@ def join_sentence(sentences):
 
 
 if __name__ == '__main__':
+    sampled = True
     data_folder = "dataset/new_dish/"
 
     # Initialize parser
@@ -35,10 +36,16 @@ if __name__ == '__main__':
     data_list = []
     # mentions_list = []
     for dataset in datasets:
-        with open(data_folder + dataset, 'r') as f:
-            output = json.load(f)
-            data_list.append(output['data'])
-            # mentions_list.append(output['mentions'])
+        if sampled:
+            with open(data_folder + dataset.split('.')[0] + '_sampled.json', 'r') as f:
+                output = json.load(f)
+                data_list.append(output['data'])
+                # mentions_list.append(output['mentions'])
+        else:
+            with open(data_folder + dataset, 'r') as f:
+                output = json.load(f)
+                data_list.append(output['data'])
+                # mentions_list.append(output['mentions'])
 
     if embedding_method == 'token':
         # average token representation for each sentence
