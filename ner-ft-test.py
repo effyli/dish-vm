@@ -15,7 +15,7 @@ task = "ner" # Should be one of "ner", "pos" or "chunk"
 model_checkpoint = "dslim/bert-base-NER"
 batch_size = 16
 
-def compute_metrics(p, label_list):
+def compute_metrics(p):
     predictions, labels = p
     predictions = np.argmax(predictions, axis=2)
 
@@ -25,7 +25,7 @@ def compute_metrics(p, label_list):
         for prediction, label in zip(predictions, labels)
     ]
     true_labels = [
-        [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list_data[l] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
 
@@ -65,13 +65,22 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 if __name__ == '__main__':
-    datasets = load_dataset("conll2003")
-    label_list = datasets["train"].features[f"{task}_tags"].feature.names
+    datasets_train = load_dataset("conll2003", split="train")
+    datasets_val = load_dataset("conll2003", split="validation")
+    datasets = {"train": datasets_train, "val": datasets_val}
+
+    # this label list is different from the actual label list that model was trained on
+    label_list_data = datasets_train.features[f"{task}_tags"].feature.names
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     data_collator = DataCollatorForTokenClassification(tokenizer)
-    tokenized_datasets = datasets.map(tokenize_and_align_labels, batched=True)
+    tokenized_datasets_train = datasets_train.map(tokenize_and_align_labels, batched=True)
+    tokenized_datasets_val = datasets_val.map(tokenize_and_align_labels, batched=True)
 
-    model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
+    model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list_data))
+    label_dict = model.config.id2label
+    # sort dictionary by keys
+    label_list = [i[1] for i in sorted(label_dict.items(), key=lambda x:x[0])]
+
     model_name = model_checkpoint.split("/")[-1]
     args = TrainingArguments(
         f"{model_name}-finetuned-{task}",
@@ -90,18 +99,17 @@ if __name__ == '__main__':
     trainer = Trainer(
         model,
         args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
+        train_dataset=datasets_train,
+        eval_dataset=datasets_val,
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics
     )
 
-    trainer.train()
-    trainer.evaluate()
-    wandb.finish()
+    # trainer.train()
+    # trainer.evaluate()
 
-    predictions, labels, _ = trainer.predict(tokenized_datasets["validation"])
+    predictions, labels, _ = trainer.predict(tokenized_datasets_val)
     predictions = np.argmax(predictions, axis=2)
 
     # Remove ignored index (special tokens)
@@ -110,10 +118,12 @@ if __name__ == '__main__':
         for prediction, label in zip(predictions, labels)
     ]
     true_labels = [
-        [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list_data[l] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
 
     results = metric.compute(predictions=true_predictions, references=true_labels)
     print(results)
     # trainer.push_to_hub()
+
+    wandb.finish()
