@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # we compare different writing styles
     # such as news and conversations
     datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
-                "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
+                "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "wikigold_dish.json",
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     names = ["conll", "cerec", "ontonotes", "i2b2", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "sec", "sciERC"]
     print("Number of datasets: ", len(datasets))

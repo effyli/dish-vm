@@ -18,7 +18,7 @@ def load_embeddings_from_file(p_names, emb_data_dir):
 
 
 def main():
-    logging.basicConfig(filename='mmd-pvals',
+    logging.basicConfig(filename='mmd-pvals-500',
                         filemode='a',
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                         datefmt='%H:%M:%S',
@@ -27,6 +27,7 @@ def main():
     logging.info("Running MMD testing for all datasets")
 
     logger = logging.getLogger('mmd-pvals')
+    num_points = 500
 
     data_folder = 'dataset/'
     datasets = ["conll_dish.json", "cerec_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
@@ -34,7 +35,7 @@ def main():
                 "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     names = ["conll", "cerec", "ontonotes", "i2b2", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "sec", "sciERC"]
     print("Number of datasets: ", len(datasets))
-    emb_data_dir = 'sent_embedding_files/new_dish/'
+    emb_data_dir = 'sent_embedding_files/'
     test_type = 'Multiv'
     test_dim = TestDimensionality.Multi
     mt = MultidimensionalTest.MMD
@@ -46,8 +47,9 @@ def main():
     # load embeddings to test
     for p_names in itertools.combinations_with_replacement(names, 2):
         print(p_names)
+        logging.info(p_names)
         emb_a, emb_b = load_embeddings_from_file(p_names, emb_data_dir)
-        p_val = shift_tester.test_shift(emb_a[:50], emb_b[:50])
+        p_val = shift_tester.test_shift(emb_a[:num_points], emb_b[:num_points])
         print('MMD distance: ', p_val[0])
         print('P value: ', p_val)
         p_vals.append(p_val)
