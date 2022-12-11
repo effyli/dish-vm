@@ -76,9 +76,15 @@ def load_data_from_json(data_folder, name, mode):
             train_data = json.load(f)
         with open(data_folder + "{}_dish_train_labels.json".format(name), 'r') as f:
             train_labels = json.load(f)
+        with open(data_folder + "{}_dish_test.json".format(name), 'r') as f:
+            test_data = json.load(f)
+        with open(data_folder + "{}_dish_test_labels.json".format(name), 'r') as f:
+            test_labels = json.load(f)
         label_list = list(set(t for e in train_labels for t in e))
         train_df = pd.DataFrame(list(zip(train_data, train_labels)), columns=['tokens', 'ner_tags'])
         train_dataset = Dataset.from_pandas(train_df)
+        test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['data', 'labels'])
+        test_dataset = Dataset.from_pandas(test_df)
     elif mode == "test":
         with open(data_folder + "{}_dish_test.json".format(name), 'r') as f:
             test_data = json.load(f)
@@ -88,7 +94,7 @@ def load_data_from_json(data_folder, name, mode):
         test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['data', 'labels'])
         test_dataset = Dataset.from_pandas(test_df)
     if mode == "train":
-        return train_dataset, label_list
+        return train_dataset, test_dataset, label_list
     elif mode == "test":
         return test_dataset
 
@@ -119,12 +125,13 @@ if __name__ == '__main__':
     for s_name in names:
         # we get the source dataset, and fine-tune on the source training set, we then evaluate on all the test sets
         print('Processing source dataset {}'.format(s_name))
-        train_dataset, label_list = load_data_from_json(data_folder, s_name, "train")
+        train_dataset, test_dataset, label_list = load_data_from_json(data_folder, s_name, "train")
         label_map = {v: k for k, v in enumerate(label_list)}
         print(label_list)
         tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
         assert isinstance(tokenizer, transformers.PreTrainedTokenizerFast)
-        tokenized_train_datasets = train_dataset.map(tokenize_and_align_labels, batched=True)
+        tokenized_train_dataset = train_dataset.map(tokenize_and_align_labels, batched=True)
+        tokenized_test_dataset = test_dataset.map(tokenize_and_align_labels, batched=True)
         model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
 
         model_name = model_checkpoint.split("/")[-1]
@@ -146,7 +153,8 @@ if __name__ == '__main__':
         trainer = Trainer(
             model,
             args,
-            train_dataset=tokenized_train_datasets,
+            train_dataset=tokenized_train_dataset,
+            eval_dataset=tokenized_test_dataset,
             data_collator=data_collator,
             tokenizer=tokenizer,
             compute_metrics=compute_metrics
@@ -157,7 +165,8 @@ if __name__ == '__main__':
         for t_name in names:
             print("Processing dataset {} and {}".format(s_name, t_name))
             test_dataset = load_dataset(data_folder, t_name, 'test')
-            trainer.evaluate(test_dataset)
+            tokenized_test_dataset = test_dataset.map(tokenize_and_align_labels, batched=True)
+            trainer.evaluate(tokenized_test_dataset)
 
     wandb.finish()
 
