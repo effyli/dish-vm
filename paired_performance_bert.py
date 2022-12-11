@@ -101,13 +101,10 @@ if __name__ == '__main__':
     data_folder = args.input_folder
     epoch = args.num_epoch
 
-    datasets = ["conll_dish.json", "ontonotes_dish.json", "i2b2-06_dish.json",
-                "GUM_dish.json", "AnEM_dish.json", "BTC_dish.json", "WNUT17_dish.json", "Wikigold_dish.json",
-                "re3d_dish.json", "SEC_dish.json", "sciERC_dish.json"]
     # names following the same order
     names = ["conll", "ontonotes", "i2b2-06", "GUM", "AnEM", "BTC", "WNUT17", "wikigold", "re3d", "SEC", "sciERC"]
 
-    print("Number of datasets: ", len(datasets))
+    print("Number of datasets: ", len(names))
     for s_name in names:
         # we get the source dataset, and fine-tune on the source training set, we then evaluate on all the test sets
         print('Processing source dataset {}'.format(s_name))
@@ -174,6 +171,7 @@ if __name__ == '__main__':
 
         for t_name in names:
             tmp_label_map = label_map.copy()
+            tmp_label_list = label_list.copy()
             print("Processing dataset {} and {}".format(s_name, t_name))
             test_dataset, test_label_list = load_data_from_json(data_folder, t_name, 'test')
             for label in test_label_list:
@@ -205,6 +203,7 @@ if __name__ == '__main__':
             compute_metrics((predictions, labels))
             # trainer.evaluate(tokenized_test_dataset)
             label_map = tmp_label_map.copy()
+            label_list = tmp_label_list.copy()
             print()
 
 
