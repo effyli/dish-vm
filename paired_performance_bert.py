@@ -24,7 +24,7 @@ def compute_metrics(p):
 
     # Remove ignored index (special tokens)
     true_predictions = [
-        [label_list_model[p] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
     true_labels = [
