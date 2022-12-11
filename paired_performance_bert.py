@@ -83,7 +83,7 @@ def load_data_from_json(data_folder, name, mode):
         label_list = list(set(t for e in train_labels for t in e))
         train_df = pd.DataFrame(list(zip(train_data, train_labels)), columns=['tokens', 'ner_tags'])
         train_dataset = Dataset.from_pandas(train_df)
-        test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['data', 'labels'])
+        test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['tokens', 'ner_tags'])
         test_dataset = Dataset.from_pandas(test_df)
     elif mode == "test":
         with open(data_folder + "{}_dish_test.json".format(name), 'r') as f:
@@ -91,7 +91,7 @@ def load_data_from_json(data_folder, name, mode):
         with open(data_folder + "{}_dish_test_labels.json".format(name), 'r') as f:
             test_labels = json.load(f)
 
-        test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['data', 'labels'])
+        test_df = pd.DataFrame(list(zip(test_data, test_labels)), columns=['tokens', 'ner_tags'])
         test_dataset = Dataset.from_pandas(test_df)
     if mode == "train":
         return train_dataset, test_dataset, label_list
