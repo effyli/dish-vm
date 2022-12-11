@@ -13,7 +13,7 @@ os.environ["WANDB_ENTITY"]="Suchandra"
 os.environ["WANDB_PROJECT"]="ner-test-2"
 
 
-notebook_login()
+# notebook_login()
 task = "ner" # Should be one of "ner", "pos" or "chunk"
 model_checkpoint = "dslim/bert-base-NER"
 batch_size = 16
@@ -25,7 +25,7 @@ def compute_metrics(p):
 
     # Remove ignored index (special tokens)
     true_predictions = [
-        [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list_model[p] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
     true_labels = [
@@ -70,15 +70,18 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 
-
 if __name__ == '__main__':
-
+    fine_tuning = False
     datasets = load_dataset("conll2003")
     label_list = datasets["train"].features[f"{task}_tags"].feature.names
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     assert isinstance(tokenizer, transformers.PreTrainedTokenizerFast)
     tokenized_datasets = datasets.map(tokenize_and_align_labels, batched=True)
     model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
+    if not fine_tuning:
+        label_list_model = [v for k, v in sorted(model.config.id2label.items(), key=lambda k:k[0])]
+    else:
+        label_list_model = label_list
 
     model_name = model_checkpoint.split("/")[-1]
     args = TrainingArguments(
@@ -106,7 +109,8 @@ if __name__ == '__main__':
         compute_metrics=compute_metrics
     )
 
-    trainer.train()
+    if fine_tuning:
+        trainer.train()
     trainer.evaluate()
 
     predictions, labels, _ = trainer.predict(tokenized_datasets["validation"])
